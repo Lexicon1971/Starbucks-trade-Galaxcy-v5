@@ -1715,6 +1715,7 @@ export default function App() {
 
       log(`REMOTE SELL: Sold ${q} ${name} at ${VENUES[vIdx]} for ${formatCurrencyLog(revenue)}.`, profit > 0 ? 'profit' : 'danger');
       SFX.play('coin');
+      setModal({type: 'comms', data: null});
   };
 
   const claimWarehouseItem = (vIdx: number, name: string, q: number) => {
@@ -2675,6 +2676,52 @@ export default function App() {
                                <div>
                                    <h3 className="text-white font-bold mb-4 uppercase tracking-widest text-sm border-l-2 border-purple-500 pl-4">Queue</h3>
                                    <div className="space-y-4">
+                                       {Object.values(shippingSource)[0]?.type === 'warehouse' && (() => {
+                                           const name = Object.keys(shippingSource)[0];
+                                           const vIdx = Object.values(shippingSource)[0].venueIdx;
+                                           const whItem = state.warehouse[vIdx]?.[name];
+                                           if (!whItem) return null;
+                                           return (
+                                               <div className="p-5 rounded-2xl border-2 border-purple-500 bg-purple-900/60 shadow-xl animate-in zoom-in-95">
+                                                   <div className="flex justify-between items-center mb-2">
+                                                       <span className="text-white font-black text-lg uppercase">Remote Hub Op</span>
+                                                       <button onClick={() => setShippingSource({})} className="text-red-400 hover:text-red-300"><XCircle size={18}/></button>
+                                                   </div>
+                                                    <div className="text-xs text-purple-100 mb-6 bg-purple-950/40 p-4 rounded-xl border border-purple-400/30 font-mono leading-relaxed">
+                                                      Staged: <span className="font-black text-white">{whItem.quantity} {name}</span> from <span className="font-black text-white">{VENUES[vIdx]}</span>.
+                                                   </div>
+                                                   <div className="grid grid-cols-2 gap-4">
+                                                        <button onClick={() => {
+                                                          const destValStr = shippingDestinations[name] || '';
+                                                          const destInt = parseInt(destValStr);
+                                                          if (isNaN(destInt)) return;
+                                                          const qtyInt = whItem.quantity;
+                                                          const cData = COMMODITIES.find(x=>x.name===name)!;
+                                                          const totalWeightVal = qtyInt * cData.unitWeight;
+                                                          const costVal = Math.ceil(totalWeightVal * 100);
+                                                          if (state.cash < costVal) return setModal({type:'message', data: `Insufficient funds: ${formatCurrencyLog(costVal)}`});
+                                                          const newW = { ...state.warehouse };
+                                                          delete newW[vIdx][name];
+                                                          if (Object.keys(newW[vIdx]).length === 0) delete newW[vIdx];
+                                                          if (!newW[destInt]) newW[destInt] = {};
+                                                          newW[destInt][name] = { ...whItem, arrivalDay: state.day + 1 };
+
+                                                          setState(prev => prev ? ({ ...prev, cash: prev.cash - costVal, warehouse: newW }) : null);
+                                                          setShippingSource({});
+                                                          SFX.play('warp');
+                                                          log(`REMOTE FORWARD: Shipped ${qtyInt} ${name} from ${VENUES[vIdx]} to ${VENUES[destInt]}.`, 'buy');
+                                                        }} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-3 rounded-xl shadow-lg uppercase action-btn">FORWARD</button>
+                                                        <button onClick={() => {
+                                                          sellWarehouseItem(vIdx, name, whItem.quantity);
+                                                          setShippingSource({});
+                                                        }} className="w-full bg-green-600 hover:bg-green-500 text-white font-black py-3 rounded-xl shadow-lg uppercase action-btn">SELL</button>
+                                                   </div>
+                                                   <div className="mt-4">
+                                                      <button onClick={() => showCommodityIntel(name)} className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-black py-3 rounded-xl shadow-lg uppercase action-btn">INTEL REGISTRY</button>
+                                                   </div>
+                                               </div>
+                                           );
+                                       })()}
                                        {stagedContract && (
                                            <div className="p-5 rounded-2xl border-2 border-purple-500 bg-purple-900/60 shadow-xl animate-in zoom-in-95">
                                                <div className="flex justify-between items-center mb-2">
@@ -2746,7 +2793,6 @@ export default function App() {
                                                                <div className="flex flex-col gap-2">
                                                                    {arrived && isHere && !item.isContractReserved && (<div className="flex gap-2"><input type="number" placeholder="Qty" className="w-16 bg-gray-900 text-white text-center text-xs rounded-lg border border-gray-700 font-bold" value={claimQuantities[name]||''} onChange={e=>setClaimQuantities({...claimQuantities, [name]:e.target.value})} /><button onClick={()=>{ const qVal = parseInt(claimQuantities[name]); if(!isNaN(qVal) && qVal>0) claimWarehouseItem(vIdxInt, name, qVal); }} className="bg-green-700 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-xs font-black uppercase transition-all shadow-md">CLAIM</button></div>)}
                                                                    {arrived && !isHere && (<button onClick={()=>forwardWarehouseItem(vIdxInt, name)} className="bg-purple-700 hover:bg-purple-600 text-white px-6 py-3 rounded-xl text-sm font-black uppercase transition-all shadow-lg">MANAGE</button>)}
-                                                                   {arrived && isHere && (<button onClick={()=>forwardWarehouseItem(vIdxInt, name)} className="bg-purple-700/50 hover:bg-purple-600 text-white px-6 py-2 rounded-xl text-xs font-black uppercase transition-all">MANAGE</button>)}
                                                                </div>
                                                            </div>
                                                        );
