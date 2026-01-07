@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>STAR BUCKS - The Strategic Edition (v5.9.0)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+      :root {
+          --color-primary: #047857;
+          --color-secondary: #fcd34d;
+          --color-accent: #3b82f6;
+          --color-log-info: #94a3b8;
+          --color-log-buy: #60a5fa;
+          --color-log-sell: #34d399;
+          --color-log-danger: #f87171;
+          --color-loan-debt: #f59e0b;
+      }
+      body {
+          font-family: 'Inter', sans-serif;
+          background-color: #010204;
+          color: #d1fae5;
+          margin: 0;
+          padding: 0;
+          min-height: 100vh;
+          width: 100vw;
+          overflow: hidden; 
+      }
+      
+      #starfield {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+          z-index: -50;
+          pointer-events: none;
+      }
+
+      .text-neon {
+          color: var(--color-secondary);
+          text-shadow: 0 0 5px #fcd34d99, 0 0 10px #fcd34d66;
+      }
+      .font-scifi {
+          font-family: 'Orbitron', sans-serif;
+      }
+      
+      .card, .sci-fi-box {
+          background: linear-gradient(135deg, rgba(6, 78, 59, 0.85) 0%, rgba(2, 44, 34, 0.95) 100%);
+          border: 1px solid #10b981;
+          box-shadow: 
+              0 0 5px rgba(16, 185, 129, 0.2),
+              inset 0 0 20px rgba(0, 0, 0, 0.5),
+              2px 4px 10px rgba(0,0,0,0.8);
+          position: relative;
+          backdrop-filter: blur(4px);
+      }
+      
+      .sci-fi-box::after {
+          content: '';
+          position: absolute;
+          bottom: -1px;
+          right: -1px;
+          width: 15px;
+          height: 15px;
+          border-bottom: 2px solid #34d399;
+          border-right: 2px solid #34d399;
+          box-shadow: 2px 2px 5px rgba(52, 211, 153, 0.5);
+      }
+      
+      .action-btn {
+          background-color: var(--color-accent);
+          color: white;
+          transition: all 0.15s;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      }
+      .action-btn:hover {
+          background-color: #2563eb;
+          transform: translateY(-1px);
+          box-shadow: 0 0 10px rgba(59, 130, 246, 0.6);
+      }
+      
+      .custom-scrollbar {
+          scrollbar-width: thin;
+          scrollbar-color: #10b981 #022c22;
+      }
+      .custom-scrollbar::-webkit-scrollbar {
+          width: 8px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #10b981;
+          border-radius: 4px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+          background: #022c22;
+      }
+      
+      .no-scrollbar::-webkit-scrollbar {
+          display: none;
+      }
+      .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+      }
+
+      .crawl-container {
+        display: flex;
+        justify-content: center;
+        position: relative;
+        height: 100%;
+        width: 100%;
+        perspective: 500px;
+        overflow: hidden;
+      }
+
+      .crawl-content {
+        position: absolute;
+        top: 100%;
+        width: 90%;
+        text-align: justify;
+        transform-origin: 50% 100%;
+        animation: crawl-anim 200s linear infinite;
+        transform: rotateX(25deg);
+      }
+
+      @keyframes crawl-anim {
+        0% {
+          top: 100%;
+          transform: rotateX(25deg) translateY(0);
+          opacity: 1;
+        }
+        90% {
+          opacity: 1;
+        }
+        100% {
+          top: -250%;
+          transform: rotateX(25deg) translateY(-250%);
+          opacity: 0;
+        }
+      }
+
+      #root {
+          width: 100vw;
+          height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+      }
+
+      .app-viewport {
+          width: 100%;
+          height: 100%;
+          position: relative;
+          overflow: hidden;
+      }
+
+      @media (min-width: 1024px) {
+          .app-viewport {
+              width: min(100vw, calc(100vh * 16 / 9));
+              height: min(100vh, calc(100vw * 9 / 16));
+              aspect-ratio: 16 / 9;
+              box-shadow: 0 0 100px rgba(0,0,0,0.8), 0 0 20px rgba(16, 185, 129, 0.3);
+              border: 1px solid rgba(16, 185, 129, 0.2);
+              background-color: transparent !important;
+          }
+      }
+    </style>
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@^19.2.3",
+        "react-dom": "https://esm.sh/react-dom@^19.2.3",
+        "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+        "react/": "https://esm.sh/react@^19.2.3/",
+        "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+        "firebase/app": "https://esm.sh/firebase@^12.7.0/app",
+        "firebase/firestore": "https://esm.sh/firebase@^12.7.0/firestore",
+        "firebase/": "https://esm.sh/firebase@^12.7.0/"
+      }
+    }
+    </script>
+  <link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <canvas id="starfield"></canvas>
+    <div id="root"></div>
+    <script>
+      const canvas = document.getElementById('starfield');
+      const ctx = canvas.getContext('2d');
+      
+      let width, height, stars = [];
+
+      function initStars() {
+          width = window.innerWidth;
+          height = window.innerHeight;
+          canvas.width = width;
+          canvas.height = height;
+          stars = [];
+          const numStars = Math.floor((width * height) / 1200); 
+          
+          for(let i=0; i<numStars; i++) {
+              stars.push({
+                  x: Math.random() * width,
+                  y: Math.random() * height,
+                  size: Math.random() < 0.9 ? Math.random() * 1.2 : Math.random() * 2.5,
+                  alpha: Math.random() * 0.5 + 0.1, 
+                  twinkleSpeed: 0.02 + Math.random() * 0.03
+              });
+          }
+      }
+
+      function animateStars() {
+          ctx.clearRect(0, 0, width, height);
+          ctx.fillStyle = "#010204"; 
+          ctx.fillRect(0,0,width,height); 
+          
+          stars.forEach(star => {
+              ctx.globalAlpha = star.alpha;
+              ctx.fillStyle = 'white';
+              ctx.beginPath();
+              ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+              ctx.fill();
+          });
+          requestAnimationFrame(animateStars);
+      }
+
+      window.addEventListener('resize', initStars);
+      initStars();
+      animateStars();
+    </script>
+    <script type="module" src="index.tsx"></script>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
