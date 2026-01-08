@@ -136,7 +136,7 @@ class SoundEngine {
         noise.start(t);
     }
 
-    play(type: 'click' | 'coin' | 'warp' | 'error' | 'success' | 'alarm') {
+    play(type: 'click' | 'coin' | 'warp' | 'error' | 'success' | 'alarm' | 'contract_success' | 'phase_change' | 'high_value_trade') {
         if (this.isMuted || !this.ctx || !this.masterGain) return;
         const t = this.ctx.currentTime;
         const osc = this.ctx.createOscillator();
@@ -172,23 +172,25 @@ class SoundEngine {
                 osc.stop(t + 0.3);
                 break;
             case 'warp':
-                const bSize = this.ctx.sampleRate * 2;
-                const b = this.ctx.createBuffer(1, bSize, this.ctx.sampleRate);
-                const d = b.getChannelData(0);
-                for (let i = 0; i < bSize; i++) d[i] = Math.random() * 2 - 1;
-                const noise = this.ctx.createBufferSource();
-                noise.buffer = b;
-                const nf = this.ctx.createBiquadFilter();
-                nf.type = 'lowpass';
-                nf.frequency.setValueAtTime(100, t);
-                nf.frequency.exponentialRampToValueAtTime(5000, t + 1.5);
-                const ng = this.ctx.createGain();
-                ng.gain.setValueAtTime(0.3, t);
-                ng.gain.linearRampToValueAtTime(0, t + 2);
-                noise.connect(nf);
-                nf.connect(ng);
-                ng.connect(this.masterGain);
-                noise.start(t);
+                {
+                    const bSize = this.ctx.sampleRate * 2;
+                    const b = this.ctx.createBuffer(1, bSize, this.ctx.sampleRate);
+                    const d = b.getChannelData(0);
+                    for (let i = 0; i < bSize; i++) d[i] = Math.random() * 2 - 1;
+                    const noise = this.ctx.createBufferSource();
+                    noise.buffer = b;
+                    const nf = this.ctx.createBiquadFilter();
+                    nf.type = 'lowpass';
+                    nf.frequency.setValueAtTime(100, t);
+                    nf.frequency.exponentialRampToValueAtTime(5000, t + 1.5);
+                    const ng = this.ctx.createGain();
+                    ng.gain.setValueAtTime(0.3, t);
+                    ng.gain.linearRampToValueAtTime(0, t + 2);
+                    noise.connect(nf);
+                    nf.connect(ng);
+                    ng.connect(this.masterGain);
+                    noise.start(t);
+                }
                 break;
             case 'success':
                 osc.type = 'triangle';
@@ -209,6 +211,65 @@ class SoundEngine {
                 gain.gain.linearRampToValueAtTime(0, t + 0.3);
                 osc.start(t);
                 osc.stop(t + 0.3);
+                break;
+            case 'contract_success':
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, t); // C5
+                osc.frequency.linearRampToValueAtTime(659.25, t + 0.1); // E5
+                osc.frequency.linearRampToValueAtTime(783.99, t + 0.2); // G5
+                osc.frequency.linearRampToValueAtTime(1046.50, t + 0.4); // C6
+                gain.gain.setValueAtTime(0.1, t);
+                gain.gain.exponentialRampToValueAtTime(0.001, t + 0.8);
+                osc.start(t);
+                osc.stop(t + 0.8);
+                break;
+            case 'phase_change':
+                {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(100, t);
+                    osc.frequency.exponentialRampToValueAtTime(400, t + 1);
+                    gain.gain.setValueAtTime(0.2, t);
+                    gain.gain.exponentialRampToValueAtTime(0.01, t + 1.5);
+                    osc.start(t);
+                    osc.stop(t + 1.5);
+
+                    const osc2 = this.ctx.createOscillator();
+                    const gain2 = this.ctx.createGain();
+                    osc2.type = 'square';
+                    osc2.frequency.setValueAtTime(101, t); // Slight detune for chorus effect
+                    osc2.frequency.exponentialRampToValueAtTime(404, t + 1);
+                    gain2.gain.setValueAtTime(0.2, t);
+                    gain2.gain.exponentialRampToValueAtTime(0.01, t + 1.5);
+                    osc2.connect(gain2);
+                    gain2.connect(this.masterGain);
+                    osc2.start(t);
+                    osc2.stop(t + 1.5);
+                }
+                break;
+            case 'high_value_trade':
+                {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(1500, t);
+                    osc.frequency.linearRampToValueAtTime(2500, t + 0.1);
+                    gain.gain.setValueAtTime(0.15, t);
+                    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+                    osc.start(t);
+                    osc.stop(t + 0.5);
+
+                    const osc3 = this.ctx.createOscillator();
+                    const gain3 = this.ctx.createGain();
+                    osc3.type = 'triangle';
+                    osc3.frequency.setValueAtTime(1510, t);
+                    osc3.frequency.linearRampToValueAtTime(2510, t + 0.1);
+                    gain3.gain.setValueAtTime(0.1, t+0.05);
+                    gain3.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+
+                    osc3.connect(gain3);
+                    gain3.connect(this.masterGain);
+
+                    osc3.start(t);
+                    osc3.stop(t + 0.5);
+                }
                 break;
         }
     }
@@ -391,6 +452,7 @@ export default function App() {
   const [claimQuantities, setClaimQuantities] = useState<Record<string, string>>({});
   const [bankInvestAmount, setBankInvestAmount] = useState<string>('');
   const [bankInvestTerm, setBankInvestTerm] = useState<string>('1');
+  const [wikiTab, setWikiTab] = useState('General');
   
   // -- STATE: v5.1 UI Toggles
   const [priorityAcknowledged, setPriorityAcknowledged] = useState(false);
@@ -777,7 +839,11 @@ export default function App() {
           if (tax > 0) log(`TAX: Paid ${formatCurrencyLog(tax)} for frequent trading.`, 'overdraft');
           log(isProfitable ? `PROFIT: Made ${formatCurrencyLog(profit)} selling ${c.name}` : `LOSS: Lost ${formatCurrencyLog(Math.abs(profit))} selling ${c.name}`, isProfitable ? 'profit' : 'danger');
           setSellQuantities(prev => ({...prev, [c.name]: ''}));
-          SFX.play('coin');
+          if (rev > 1000000) {
+            SFX.play('high_value_trade');
+          } else {
+            SFX.play('coin');
+          }
       }
       setModal({type:'none', data:null});
   };
@@ -1715,7 +1781,6 @@ export default function App() {
 
       log(`REMOTE SELL: Sold ${q} ${name} at ${VENUES[vIdx]} for ${formatCurrencyLog(revenue)}.`, profit > 0 ? 'profit' : 'danger');
       SFX.play('coin');
-      setModal({type: 'comms', data: null});
   };
 
   const claimWarehouseItem = (vIdx: number, name: string, q: number) => {
@@ -1850,6 +1915,31 @@ export default function App() {
         );
       }
 
+      if (modal.type === 'wiki') {
+        const tabs = { General: User, Commodities: FlaskConical, Venues: Map, Corporations: Briefcase, 'Loan Firms': Landmark, Upgrades: Cog, Encounters: AlertTriangle };
+        return (
+            <div className="flex flex-col h-full bg-slate-900/40 p-4 md:p-8 animate-in fade-in duration-300">
+                <div className="flex justify-between items-center mb-8 border-b border-gray-700 pb-4">
+                    <h2 className="text-3xl font-scifi text-orange-400 uppercase tracking-widest">Sector Codex</h2>
+                </div>
+                <div className="flex bg-slate-800/50 p-1 rounded-xl mb-4">
+                    {Object.entries(tabs).map(([tab, Icon]) => (
+                        <button key={tab} onClick={() => setWikiTab(tab)} className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-bold text-xs uppercase transition-all ${wikiTab === tab ? 'bg-orange-600 text-white shadow-md' : 'text-gray-400 hover:bg-slate-700'}`}><Icon size={14}/>{tab}</button>
+                    ))}
+                </div>
+                <div className="flex-grow overflow-y-auto custom-scrollbar pr-4 space-y-4">
+                    {wikiTab === 'General' && <div>General Info...</div>}
+                    {wikiTab === 'Commodities' && COMMODITIES.map(c => <div key={c.name} className="bg-black/30 p-4 rounded-xl border border-gray-800">{c.name}</div>)}
+                    {wikiTab === 'Venues' && VENUES.map(v => <div key={v} className="bg-black/30 p-4 rounded-xl border border-gray-800">{v}</div>)}
+                    {wikiTab === 'Corporations' && CONTRACT_FIRMS.map(c => <div key={c} className="bg-black/30 p-4 rounded-xl border border-gray-800">{c}</div>)}
+                    {wikiTab === 'Loan Firms' && LOAN_FIRMS.map(l => <div key={l.name} className="bg-black/30 p-4 rounded-xl border border-gray-800">{l.name}</div>)}
+                    {wikiTab === 'Upgrades' && SHOP_ITEMS.map(i => <div key={i.id} className="bg-black/30 p-4 rounded-xl border border-gray-800">{i.name}</div>)}
+                    {wikiTab === 'Encounters' && <div>Encounter Info...</div>}
+                </div>
+            </div>
+        );
+      }
+
       if (modal.type === 'venue_intel') {
         return (
             <div className="flex flex-col h-full p-4 md:p-8 bg-black/40 animate-in fade-in duration-300">
@@ -1883,6 +1973,15 @@ export default function App() {
       if (modal.type === 'commodity_intel') {
         const name = modal.data.name;
         const c = COMMODITIES.find(x=>x.name === name)!;
+
+        let minPrice = Infinity;
+        let maxPrice = 0;
+        state.markets.forEach(m => {
+            const price = m[name].price;
+            if (price < minPrice) minPrice = price;
+            if (price > maxPrice) maxPrice = price;
+        });
+
         return (
             <div className="flex flex-col h-full p-4 md:p-8 bg-black/40 animate-in zoom-in-95 duration-300">
                 <div className="flex justify-between items-center mb-8 border-b border-gray-700 pb-4">
@@ -1928,13 +2027,25 @@ export default function App() {
                             if (relativePrice <= 0.33) priceColorClass = 'text-green-400';
                             if (relativePrice >= 0.66) priceColorClass = 'text-red-400';
 
+                            const isBestBuy = price === minPrice;
+                            const isBestSell = price === maxPrice;
+
                             return (
                                 <div key={i} className="flex justify-between items-center bg-black/30 p-4 rounded-xl border border-gray-800 hover:border-cyan-500/20 transition-all">
                                     <div className="flex items-center gap-2">
                                         <span className="text-gray-400 font-bold">{VENUES[i]}</span>
                                         {isStored && <span className="bg-blue-600 text-white text-[8px] font-black px-1.5 py-0.5 rounded animate-pulse">STORED</span>}
+                                        {isBestBuy && stock > 0 && <span className="bg-green-600 text-white text-[8px] font-black px-1.5 py-0.5 rounded">BEST BUY</span>}
+                                        {isBestSell && <span className="bg-red-600 text-white text-[8px] font-black px-1.5 py-0.5 rounded">BEST SELL</span>}
                                     </div>
-                                    <div className="flex items-center gap-6">
+                                    <div className="flex items-center gap-3">
+                                        <button onClick={() => {
+                                            setShippingDestinations({ ...shippingDestinations, [name]: i.toString() });
+                                            setLogisticsTab('shipping');
+                                            setModal({ type: 'shipping', data: null });
+                                            setHighlightShippingItem(name);
+                                            SFX.play('click');
+                                        }} className="text-[10px] bg-cyan-900 hover:bg-cyan-800 border border-cyan-500 text-cyan-300 px-2 py-1 rounded font-black shrink-0">SET DESTINATION</button>
                                         <span className="text-xs text-gray-500 font-mono">Stock: <span className="text-white">{stock}</span></span>
                                         <div className={priceColorClass}><PriceDisplay value={price} size="text-md" compact /></div>
                                     </div>
@@ -2676,52 +2787,6 @@ export default function App() {
                                <div>
                                    <h3 className="text-white font-bold mb-4 uppercase tracking-widest text-sm border-l-2 border-purple-500 pl-4">Queue</h3>
                                    <div className="space-y-4">
-                                       {Object.values(shippingSource)[0]?.type === 'warehouse' && (() => {
-                                           const name = Object.keys(shippingSource)[0];
-                                           const vIdx = Object.values(shippingSource)[0].venueIdx;
-                                           const whItem = state.warehouse[vIdx]?.[name];
-                                           if (!whItem) return null;
-                                           return (
-                                               <div className="p-5 rounded-2xl border-2 border-purple-500 bg-purple-900/60 shadow-xl animate-in zoom-in-95">
-                                                   <div className="flex justify-between items-center mb-2">
-                                                       <span className="text-white font-black text-lg uppercase">Remote Hub Op</span>
-                                                       <button onClick={() => setShippingSource({})} className="text-red-400 hover:text-red-300"><XCircle size={18}/></button>
-                                                   </div>
-                                                    <div className="text-xs text-purple-100 mb-6 bg-purple-950/40 p-4 rounded-xl border border-purple-400/30 font-mono leading-relaxed">
-                                                      Staged: <span className="font-black text-white">{whItem.quantity} {name}</span> from <span className="font-black text-white">{VENUES[vIdx]}</span>.
-                                                   </div>
-                                                   <div className="grid grid-cols-2 gap-4">
-                                                        <button onClick={() => {
-                                                          const destValStr = shippingDestinations[name] || '';
-                                                          const destInt = parseInt(destValStr);
-                                                          if (isNaN(destInt)) return;
-                                                          const qtyInt = whItem.quantity;
-                                                          const cData = COMMODITIES.find(x=>x.name===name)!;
-                                                          const totalWeightVal = qtyInt * cData.unitWeight;
-                                                          const costVal = Math.ceil(totalWeightVal * 100);
-                                                          if (state.cash < costVal) return setModal({type:'message', data: `Insufficient funds: ${formatCurrencyLog(costVal)}`});
-                                                          const newW = { ...state.warehouse };
-                                                          delete newW[vIdx][name];
-                                                          if (Object.keys(newW[vIdx]).length === 0) delete newW[vIdx];
-                                                          if (!newW[destInt]) newW[destInt] = {};
-                                                          newW[destInt][name] = { ...whItem, arrivalDay: state.day + 1 };
-
-                                                          setState(prev => prev ? ({ ...prev, cash: prev.cash - costVal, warehouse: newW }) : null);
-                                                          setShippingSource({});
-                                                          SFX.play('warp');
-                                                          log(`REMOTE FORWARD: Shipped ${qtyInt} ${name} from ${VENUES[vIdx]} to ${VENUES[destInt]}.`, 'buy');
-                                                        }} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-3 rounded-xl shadow-lg uppercase action-btn">FORWARD</button>
-                                                        <button onClick={() => {
-                                                          sellWarehouseItem(vIdx, name, whItem.quantity);
-                                                          setShippingSource({});
-                                                        }} className="w-full bg-green-600 hover:bg-green-500 text-white font-black py-3 rounded-xl shadow-lg uppercase action-btn">SELL</button>
-                                                   </div>
-                                                   <div className="mt-4">
-                                                      <button onClick={() => showCommodityIntel(name)} className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-black py-3 rounded-xl shadow-lg uppercase action-btn">INTEL REGISTRY</button>
-                                                   </div>
-                                               </div>
-                                           );
-                                       })()}
                                        {stagedContract && (
                                            <div className="p-5 rounded-2xl border-2 border-purple-500 bg-purple-900/60 shadow-xl animate-in zoom-in-95">
                                                <div className="flex justify-between items-center mb-2">
@@ -2760,6 +2825,125 @@ export default function App() {
                                                }} className="w-full bg-purple-600 hover:bg-purple-500 text-white font-black py-5 rounded-2xl shadow-xl uppercase action-btn">Fulfill contract</button>
                                            </div>
                                        )}
+                                       {(() => {
+                                           const remoteItemSourceName = Object.keys(shippingSource).find(name => shippingSource[name]?.type === 'warehouse');
+                                           if (!remoteItemSourceName || !state) return null;
+
+                                           const sourceInfo = shippingSource[remoteItemSourceName];
+                                           const whItem = state.warehouse[sourceInfo.venueIdx]?.[remoteItemSourceName];
+                                           if (!whItem) return null;
+
+                                           const name = remoteItemSourceName;
+                                           const vIdx = sourceInfo.venueIdx;
+
+                                           const destValStr = shippingDestinations[name] || '';
+                                           const methodValStr = shippingTiers[name] || 'fast';
+                                           const destInt = parseInt(destValStr);
+                                           const sellPrice = state.markets[vIdx][name].price;
+                                           const forwardPrice = !isNaN(destInt) ? state.markets[destInt][name].price : 0;
+                                           const qtyInt = parseInt(shippingQuantities[name] || '0');
+                                           const potentialProfit = !isNaN(qtyInt) && qtyInt > 0 ? (forwardPrice - sellPrice) * qtyInt : 0;
+
+                                           return (
+                                               <div className="p-5 rounded-2xl border-2 border-purple-500 bg-purple-900/60 shadow-xl animate-pulse">
+                                                   <div className="flex justify-between items-center mb-2">
+                                                       <span className="text-white font-black text-lg uppercase">Remote Hub Op</span>
+                                                       <button onClick={() => {
+                                                           setShippingSource({});
+                                                           setHighlightShippingItem(null);
+                                                           setShippingQuantities({});
+                                                       }} className="text-red-400 hover:text-red-300"><XCircle size={18}/></button>
+                                                   </div>
+                                                   <div className="text-xs text-purple-100 mb-6 bg-purple-950/40 p-4 rounded-xl border border-purple-400/30 font-mono leading-relaxed">
+                                                       Staged <span className="font-black text-white">{whItem.quantity} {name}</span> from <span className="font-black text-white">{VENUES[vIdx]}</span>.
+                                                   </div>
+
+                                                    <div className="grid grid-cols-3 gap-3 mb-4">
+                                                        <input type="number" placeholder="Qty" className="bg-gray-900 text-white p-3 rounded-xl border border-gray-700 text-lg font-bold outline-none col-span-2" value={shippingQuantities[name] || ''} onChange={e=>setShippingQuantities({...shippingQuantities, [name]:e.target.value})} />
+                                                        <button onClick={()=>setShippingQuantities({...shippingQuantities, [name]: whItem.quantity.toString()})} className="bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-xl transition-colors">MAX</button>
+                                                    </div>
+
+                                                   <select className="w-full bg-gray-900 text-white p-3 rounded-xl border border-gray-700 font-bold outline-none col-span-1 mb-4" value={destValStr || ''} onChange={e=>setShippingDestinations({...shippingDestinations, [name]:e.target.value})}>
+                                                       <option value="">Select Destination...</option>
+                                                       {VENUES.map((v,i)=>(i !== vIdx ? <option key={i} value={i}>{v}</option> : null))}
+                                                   </select>
+
+                                                   <select className="w-full flex-grow bg-gray-900 text-white p-3 rounded-xl border border-gray-700 font-bold outline-none text-sm mb-4" value={methodValStr} onChange={e=>setShippingTiers({...shippingTiers, [name]:e.target.value})}>
+                                                       <option value="fast">EXPRESS (1 Day, 100/T)</option>
+                                                       <option value="standard">STANDARD (2 Days, 50/T)</option>
+                                                       <option value="slow">FREIGHT (3 Days, 20/T)</option>
+                                                   </select>
+
+                                                   {destValStr && qtyInt > 0 && (
+                                                        <div className="text-center mb-4 p-3 bg-black/30 rounded-lg">
+                                                            <div className="text-[10px] uppercase font-bold text-gray-400">Potential Profit vs. Local Sale</div>
+                                                            <PriceDisplay value={potentialProfit} colored size="text-lg" />
+                                                        </div>
+                                                    )}
+
+                                                   <div className="grid grid-cols-2 gap-3">
+                                                       <button onClick={() => {
+                                                            const qtyInt = parseInt(shippingQuantities[name] || '0');
+                                                            if (qtyInt <= 0 || qtyInt > whItem.quantity) { SFX.play('error'); return; }
+                                                            sellWarehouseItem(vIdx, name, qtyInt);
+                                                            setShippingSource({});
+                                                            setHighlightShippingItem(null);
+                                                            setShippingQuantities({});
+                                                        }} className="w-full bg-red-600 hover:bg-red-500 text-white font-black py-3 rounded-xl shadow-lg uppercase">SELL AT HUB</button>
+
+                                                       <button onClick={() => {
+                                                           const qtyInt = parseInt(shippingQuantities[name] || '0');
+                                                            if (qtyInt <= 0 || qtyInt > whItem.quantity) { SFX.play('error'); return; }
+                                                           const destInt = parseInt(destValStr);
+                                                           if (isNaN(destInt)) return;
+
+                                                           const unitCostAmt = methodValStr === 'fast' ? 100 : (methodValStr === 'standard' ? 50 : 20);
+                                                           const durationDays = methodValStr === 'fast' ? 1 : (methodValStr === 'standard' ? 2 : 3);
+                                                           const cData = COMMODITIES.find(x=>x.name===name)!;
+                                                           const totalWeightVal = qtyInt * cData.unitWeight;
+                                                           const costVal = Math.ceil(totalWeightVal * unitCostAmt);
+
+                                                           if (state.cash < costVal) { SFX.play('error'); return setModal({type:'message', data: "Insufficient funds for logistics."}); }
+
+                                                           const newWarehouseDict: Warehouse = JSON.parse(JSON.stringify(state.warehouse));
+
+                                                           newWarehouseDict[vIdx][name].quantity -= qtyInt;
+                                                            if (newWarehouseDict[vIdx][name].quantity <= 0) {
+                                                                delete newWarehouseDict[vIdx][name];
+                                                            }
+                                                            if (Object.keys(newWarehouseDict[vIdx]).length === 0) {
+                                                                delete newWarehouseDict[vIdx];
+                                                            }
+
+                                                           if(!newWarehouseDict[destInt]) newWarehouseDict[destInt] = {};
+                                                           const existingWare = newWarehouseDict[destInt][name];
+                                                           let newArrivalDay = state.day + durationDays;
+                                                           let newAvgCostVal = whItem.originalAvgCost;
+                                                           let newQtyVal = qtyInt;
+
+                                                           if (existingWare) {
+                                                               newArrivalDay = Math.max(existingWare.arrivalDay, newArrivalDay);
+                                                               newAvgCostVal = ((existingWare.quantity * existingWare.originalAvgCost) + (qtyInt * whItem.originalAvgCost)) / (existingWare.quantity + qtyInt);
+                                                               newQtyVal += existingWare.quantity;
+                                                           }
+
+                                                           newWarehouseDict[destInt][name] = { quantity: newQtyVal, originalAvgCost: newAvgCostVal, arrivalDay: newArrivalDay };
+
+                                                           setState(prev => prev ? ({ ...prev, cash: prev.cash - costVal, warehouse: newWarehouseDict }) : null);
+
+                                                           setShippingSource({});
+                                                           setHighlightShippingItem(null);
+                                                           setShippingQuantities({});
+                                                           setShippingDestinations({});
+                                                           SFX.play('warp');
+                                                           log(`LOGISTICS: Forwarded ${qtyInt} ${name} from ${VENUES[vIdx]} to ${VENUES[destInt]}.`, 'buy');
+                                                       }} className="w-full bg-purple-600 hover:bg-purple-500 text-white font-black py-3 rounded-xl shadow-lg uppercase" disabled={!destValStr || destInt === vIdx}>
+                                                            {destInt === vIdx ? 'CANNOT FORWARD TO SOURCE' : 'FORWARD'}
+                                                       </button>
+                                                   </div>
+                                               </div>
+                                           )
+                                       })()}
                                    </div>
                                </div>
                            </div>
@@ -2793,6 +2977,7 @@ export default function App() {
                                                                <div className="flex flex-col gap-2">
                                                                    {arrived && isHere && !item.isContractReserved && (<div className="flex gap-2"><input type="number" placeholder="Qty" className="w-16 bg-gray-900 text-white text-center text-xs rounded-lg border border-gray-700 font-bold" value={claimQuantities[name]||''} onChange={e=>setClaimQuantities({...claimQuantities, [name]:e.target.value})} /><button onClick={()=>{ const qVal = parseInt(claimQuantities[name]); if(!isNaN(qVal) && qVal>0) claimWarehouseItem(vIdxInt, name, qVal); }} className="bg-green-700 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-xs font-black uppercase transition-all shadow-md">CLAIM</button></div>)}
                                                                    {arrived && !isHere && (<button onClick={()=>forwardWarehouseItem(vIdxInt, name)} className="bg-purple-700 hover:bg-purple-600 text-white px-6 py-3 rounded-xl text-sm font-black uppercase transition-all shadow-lg">MANAGE</button>)}
+                                                                   {arrived && isHere && (<button onClick={()=>forwardWarehouseItem(vIdxInt, name)} className="bg-purple-700/50 hover:bg-purple-600 text-white px-6 py-2 rounded-xl text-xs font-black uppercase transition-all">MANAGE</button>)}
                                                                </div>
                                                            </div>
                                                        );

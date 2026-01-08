@@ -216,6 +216,16 @@
           ctx.fillRect(0,0,width,height); 
           
           stars.forEach(star => {
+              star.alpha += star.twinkleSpeed;
+              if (star.alpha > 1 || star.alpha < 0.1) {
+                  star.twinkleSpeed *= -1;
+              }
+
+              star.x -= 0.1 * star.size;
+              if (star.x < 0) {
+                  star.x = width;
+              }
+
               ctx.globalAlpha = star.alpha;
               ctx.fillStyle = 'white';
               ctx.beginPath();
