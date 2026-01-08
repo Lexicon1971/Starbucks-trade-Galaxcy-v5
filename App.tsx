@@ -43,8 +43,8 @@ import { Building2, Rocket, XCircle, Trophy, Zap, Truck, Shield, Wrench, Fuel, C
 
 // --- BLOCK 1: EXTERNAL SERVICES (FIREBASE & AUDIO) --------------------------
 
-// import { initializeApp } from 'firebase/app';
-// import { getFirestore, collection, addDoc, query, orderBy, limit, getDocs } from 'firebase/firestore';
+import { initializeApp } from 'firebase/app';
+import { getFirestore, collection, addDoc, query, orderBy, limit, getDocs } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: "API_KEY",
@@ -56,7 +56,6 @@ const firebaseConfig = {
 };
 
 let db: any = null;
-/*
 try {
   if (firebaseConfig.projectId !== "PROJECT_ID") {
     const app = initializeApp(firebaseConfig);
@@ -65,7 +64,6 @@ try {
 } catch (e) {
   console.log("Firebase fallback.");
 }
-*/
 
 class SoundEngine {
     private ctx: AudioContext | null = null;
@@ -288,6 +286,19 @@ const speakRetro = (text: string) => {
     utterance.rate = 0.9;
     utterance.volume = 0.8;
     // Attempt to pick a robotic sounding voice if available
+    const voices = window.speechSynthesis.getVoices();
+    const roboticVoice = voices.find(v => v.name.toLowerCase().includes('google uk english male') || v.name.toLowerCase().includes('robot'));
+    if (roboticVoice) utterance.voice = roboticVoice;
+    window.speechSynthesis.speak(utterance);
+};
+
+const speakPanicked = (text: string) => {
+    if (SFX.isMuted) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.pitch = 1.5;
+    utterance.rate = 1.2;
+    utterance.volume = 1.0;
     const voices = window.speechSynthesis.getVoices();
     const roboticVoice = voices.find(v => v.name.toLowerCase().includes('google uk english male') || v.name.toLowerCase().includes('robot'));
     if (roboticVoice) utterance.voice = roboticVoice;
@@ -530,7 +541,8 @@ export default function App() {
         dailyTransactions: {},
         fomoDailyUse: { mesh: false, stims: false }, // Fixed 'boolean' syntax error
         warrantLevel: 0,
-        sectorPasses: []
+        sectorPasses: [],
+        isMutinyActive: false
     } as GameState;
   };
 
@@ -643,6 +655,13 @@ export default function App() {
 
   const handleFeatureClick = (feature: string, callback: () => void) => {
       SFX.play('click');
+      if (state?.isMutinyActive && (feature === 'shop' || feature === 'fomo')) {
+        return setModal({
+            type: 'message',
+            data: "The crew has seized control of this deck. Pay the ransom at the I.B.A.N.K. Hub to regain access.",
+            color: 'text-red-400'
+        });
+      }
       if (state && state.tutorialActive && !state.tutorialFlags[feature]) {
           let title = "", text = "";
           if (feature === 'shop') { title = "Fixathing'u'ma Jig Deck"; text = "Buy, install, and upgrade the Mining Laser. \nRepair your Ship Hull and Laser.\nAcquire: Shields, Cannon and scanner. \nAnd expand your cargo Bay to the Max using Z@onflex Weave Mesh (to be bought at the market) before expanding.\n\nPro tip: Captain, you can increase the Cargo Bay even further every time you reach a new phase."; }
@@ -1198,10 +1217,24 @@ export default function App() {
                   outcomeMsg = `INFESTATION: Rust Rats ate ${amt} units of ${encounter.targetItem}. Squeaky little monsters.`;
                   r.events.push(`ENCOUNTER: Rust Rats ate ${amt} ${encounter.targetItem}.`);
               } else {
-                  outcomeMsg = `INFESTATION: Rats found nothing tasty, so they just chewed the pilot's left boot.`;
+                  s.cash -= 50;
+                  outcomeMsg = `INFESTATION: Rats found nothing tasty, so they chewed the pilot's left boot. Deducted ${formatCurrencyLog(50)} for boot repairs.`;
+                  r.events.push(`ENCOUNTER: Rust Rats chewed boot. Paid ${formatCurrencyLog(50)}.`);
               }
               outcomeType = 'danger';
               break;
+            case 'mutiny':
+                if (decision === 'pay') {
+                    s.cash -= encounter.demandAmount;
+                    outcomeMsg = `APPEASED: The crew accepted their "Profit Share." Lost ${formatCurrencyLog(encounter.demandAmount)}.`;
+                    r.events.push(`ENCOUNTER: Paid crew ${formatCurrencyLog(encounter.demandAmount)} to avert mutiny.`);
+                } else {
+                    s.isMutinyActive = true;
+                    outcomeMsg = `MUTINY: The crew has seized control of the F.O.M.O. and Upgrades decks! You must pay their ransom at an I.B.A.N.K. Hub to regain access.`;
+                    outcomeType = 'critical';
+                    r.events.push(`CRITICAL: Crew mutiny! F.O.M.O. & Upgrades locked.`);
+                }
+                break;
           case 'derelict':
               if (decision === 'check') {
                   if (Math.random() < 0.5) {
@@ -1230,6 +1263,10 @@ export default function App() {
                  outcomeType = 'danger';
                  r.events.push(`ENCOUNTER: ${encounter.title} impact: ${Math.round(encounter.riskDamage)}% damage.`);
               }
+      }
+
+      if (outcomeType === 'danger' || outcomeType === 'critical') {
+        speakPanicked(outcomeMsg);
       }
 
       setModal({ type: 'encounter_resolution', data: { state: s, report: r, outcomeMsg, outcomeType, destIdx, mine, overload } });
@@ -1930,13 +1967,13 @@ export default function App() {
                     ))}
                 </div>
                 <div className="flex-grow overflow-y-auto custom-scrollbar pr-4 space-y-4">
-                    {wikiTab === 'General' && <div>General Info...</div>}
-                    {wikiTab === 'Commodities' && COMMODITIES.map(c => <div key={c.name} className="bg-black/30 p-4 rounded-xl border border-gray-800">{c.name}</div>)}
+                    {wikiTab === 'General' && <div className="p-4 bg-black/30 rounded-xl border border-gray-800">Welcome to the StarBucks Sector, Captain. This codex is your guide to navigating the complex world of interstellar trade.</div>}
+                    {wikiTab === 'Commodities' && COMMODITIES.map(c => <div key={c.name} className="bg-black/30 p-4 rounded-xl border border-gray-800"><b>{c.name}</b>: {c.description || "No description available."}</div>)}
                     {wikiTab === 'Venues' && VENUES.map(v => <div key={v} className="bg-black/30 p-4 rounded-xl border border-gray-800">{v}</div>)}
                     {wikiTab === 'Corporations' && CONTRACT_FIRMS.map(c => <div key={c} className="bg-black/30 p-4 rounded-xl border border-gray-800">{c}</div>)}
                     {wikiTab === 'Loan Firms' && LOAN_FIRMS.map(l => <div key={l.name} className="bg-black/30 p-4 rounded-xl border border-gray-800">{l.name}</div>)}
-                    {wikiTab === 'Upgrades' && SHOP_ITEMS.map(i => <div key={i.id} className="bg-black/30 p-4 rounded-xl border border-gray-800">{i.name}</div>)}
-                    {wikiTab === 'Encounters' && <div>Encounter Info...</div>}
+                    {wikiTab === 'Upgrades' && SHOP_ITEMS.map(i => <div key={i.id} className="bg-black/30 p-4 rounded-xl border border-gray-800"><b>{i.name}</b>: {i.description}</div>)}
+                    {wikiTab === 'Encounters' && <div className="p-4 bg-black/30 rounded-xl border border-gray-800">This section will detail the various encounters you may face in the void.</div>}
                 </div>
             </div>
         );
@@ -2643,6 +2680,18 @@ export default function App() {
                                <button onClick={()=>{ if(state.activeLoans.length > 0) { SFX.play('error'); return setModal({type:'message', data:"Regulatory Block: Capital deposits are prohibited while holding active liabilities."}); } const amtVal = parseInt(bankInvestAmount); const termVal = parseInt(bankInvestTerm); if(isNaN(amtVal) || amtVal<=0 || state.cash<amtVal) { SFX.play('error'); return; } const ratesDict: any = {1:0.05, 2:0.20, 3:0.50}; const rateVal = ratesDict[termVal]; const matVal = Math.floor(amtVal * (1 + rateVal)); const invEntry = {id:Date.now(), amount:amtVal, daysRemaining:termVal, maturityValue:matVal, interestRate:rateVal}; setState(prev=>prev?({...prev, cash:prev.cash-amtVal, investments:[...prev.investments, invEntry]}):null); setBankInvestAmount(''); SFX.play('coin'); log(`INVESTMENT: Locked ${formatCurrencyLog(amtVal)} for ${termVal} days.`, 'investment'); }} className="w-full bg-green-600 hover:bg-green-500 text-white font-black py-5 rounded-2xl text-2xl transition-all shadow-lg shadow-green-900/20 action-btn uppercase">INITIATE LOCKUP</button>
                                <p className="text-[9px] text-gray-500 text-center mt-4 italic uppercase tracking-widest opacity-60">All fixed-term investments are non-liquid until settlement day.</p>
                            </div>
+                            {state.isMutinyActive && (
+                                <div className="bg-red-900/20 p-6 rounded-2xl border border-red-500/30 animate-pulse mt-6">
+                                    <h4 className="text-red-400 font-bold mb-4 text-lg uppercase tracking-tighter">Crew Demands</h4>
+                                    <p className="text-red-200 text-sm mb-4">The crew demands a ransom of {formatCurrencyLog(50000)} to unlock the F.O.M.O. and Upgrades decks.</p>
+                                    <button onClick={() => {
+                                        if (state.cash < 50000) return setModal({type:'message', data: "Insufficient funds to pay ransom."});
+                                        setState(prev => prev ? ({ ...prev, cash: prev.cash - 50000, isMutinyActive: false }) : null);
+                                        log(`MUTINY: Paid crew ransom. F.O.M.O. & Upgrades unlocked.`, 'buy');
+                                        SFX.play('success');
+                                    }} className="w-full bg-red-600 hover:bg-red-500 text-white font-black py-3 rounded-xl text-lg uppercase">PAY RANSOM</button>
+                                </div>
+                            )}
                        </div>
                   </div>
               </div>
