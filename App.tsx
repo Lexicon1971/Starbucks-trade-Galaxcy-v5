@@ -37,14 +37,14 @@ import {
   CONTRACT_LIMIT_P1, CONTRACT_LIMIT_P2, CONTRACT_LIMIT_P3, TRADE_BAN_DURATION,
   REPAIR_COST, REPAIR_INCREMENT, MAX_REPAIR_HEALTH, LOAN_REPAYMENT_DAYS, LASER_REPAIR_COST, QUIRKY_MESSAGES_DB, TUTORIAL_QUOTES,
   MINING_OVERLOAD_YIELD_MULT, MINING_OVERLOAD_RISK_MULT
-} from './constants.ts';
-import { GameState, Market, LoanOffer, LogEntry, DailyReport, Commodity, HighScore, CargoItem, EquipmentItem, Encounter, ActiveLoan, Contract, WarehouseItem, PendingTrade, Warehouse, MarketItem } from './types.ts';
+} from './constants';
+import { GameState, Market, LoanOffer, LogEntry, DailyReport, Commodity, HighScore, CargoItem, EquipmentItem, Encounter, ActiveLoan, Contract, WarehouseItem, PendingTrade, Warehouse, MarketItem } from './types';
 import { Building2, Rocket, XCircle, Trophy, Zap, Truck, Shield, Wrench, Fuel, Crosshair, Heart, Swords, Skull, Box, AlertTriangle, Radar, ClipboardList, Radio, HelpCircle, Warehouse as WarehouseIcon, RefreshCw, Factory, Map as MapIcon, BarChart3, PowerOff, Droplets, Pill, Save, Volume2, VolumeX, Menu, Anchor, Cpu, Hourglass, ToggleLeft, ToggleRight, Info, LineChart, ChevronUp, ChevronDown, Circle, CheckCircle2, BookOpen } from 'lucide-react';
 
 // --- BLOCK 1: EXTERNAL SERVICES (FIREBASE & AUDIO) --------------------------
 
-import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, addDoc, query, orderBy, limit, getDocs } from 'firebase/firestore';
+// import { initializeApp } from 'firebase/app';
+// import { getFirestore, collection, addDoc, query, orderBy, limit, getDocs } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: "API_KEY",
@@ -56,6 +56,7 @@ const firebaseConfig = {
 };
 
 let db: any = null;
+/*
 try {
   if (firebaseConfig.projectId !== "PROJECT_ID") {
     const app = initializeApp(firebaseConfig);
@@ -64,6 +65,7 @@ try {
 } catch (e) {
   console.log("Firebase fallback.");
 }
+*/
 
 class SoundEngine {
     private ctx: AudioContext | null = null;
@@ -532,6 +534,10 @@ export default function App() {
     } as GameState;
   };
 
+  useEffect(() => {
+      initGame(true);
+  }, []);
+
   const initGame = async (checkSave: boolean = true) => {
     const markets: Market[] = VENUES.map((_, idx) => generateMarket(true, idx === 0));
     const startIdx = Math.floor(Math.random() * VENUES.length);
@@ -581,10 +587,6 @@ export default function App() {
     setState(baseState);
     setModal({ type: 'welcome', data: null });
   };
-
-  useEffect(() => { 
-      initGame(true); 
-  }, []);
   
   useEffect(() => { runTutorialCheck(); }, [state?.day, modal.type]);
 
