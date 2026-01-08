@@ -8,6 +8,7 @@ export interface Commodity {
   minPrice: number;
   maxPrice: number;
   rarity: number;
+  description?: string;
 }
 
 export interface MarketItem {
@@ -161,6 +162,7 @@ export interface GameState {
   // v5.7 Extensions
   warrantLevel: number; // Increases law enforcement encounter chance
   sectorPasses: string[]; // Grants free passage or bonuses in certain sectors
+  isMutinyActive?: boolean; // Locks F.O.M.O. and Upgrades decks
   
   pendingTrade?: PendingTrade; // For tax confirmation
 }
