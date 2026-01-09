@@ -84,6 +84,7 @@ class SoundEngine {
     }
 
     toggleMute() {
+        this.init();
         this.isMuted = !this.isMuted;
         if (this.masterGain) {
             this.masterGain.gain.setTargetAtTime(this.isMuted ? 0 : 0.6, this.ctx!.currentTime, 0.1);
@@ -136,7 +137,8 @@ class SoundEngine {
         noise.start(t);
     }
 
-    play(type: 'click' | 'coin' | 'warp' | 'error' | 'success' | 'alarm' | 'contract_success' | 'phase_change' | 'high_value_trade') {
+    play(type: 'click' | 'coin' | 'warp' | 'error' | 'success' | 'alarm' | 'contract_success' | 'phase_change' | 'high_value_trade' | 'kaching' | 'swipe') {
+        this.init();
         if (this.isMuted || !this.ctx || !this.masterGain) return;
         const t = this.ctx.currentTime;
         const osc = this.ctx.createOscillator();
@@ -270,6 +272,47 @@ class SoundEngine {
                     osc3.start(t);
                     osc3.stop(t + 0.5);
                 }
+                break;
+            case 'kaching':
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(1046.50, t); // C6
+                gain.gain.setValueAtTime(0.1, t);
+                gain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+                osc.start(t);
+                osc.stop(t + 0.5);
+
+                const osc2 = this.ctx.createOscillator();
+                const gain2 = this.ctx.createGain();
+                osc2.type = 'sine';
+                osc2.frequency.setValueAtTime(1396.91, t + 0.05); // F#6
+                gain2.gain.setValueAtTime(0.08, t + 0.05);
+                gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+                osc2.connect(gain2);
+                gain2.connect(this.masterGain);
+                osc2.start(t);
+                osc2.stop(t + 0.5);
+                break;
+            case 'swipe':
+                const bufferSize = this.ctx.sampleRate * 0.2;
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+                const noise = this.ctx.createBufferSource();
+                noise.buffer = buffer;
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'bandpass';
+                filter.frequency.setValueAtTime(1500, t);
+                filter.Q.setValueAtTime(10, t);
+                const envelope = this.ctx.createGain();
+                envelope.gain.setValueAtTime(0.2, t);
+                envelope.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+                noise.connect(filter);
+                filter.connect(envelope);
+                envelope.connect(this.masterGain);
+                noise.start(t);
+                noise.stop(t + 0.2);
                 break;
         }
     }
@@ -836,7 +879,7 @@ export default function App() {
           }) : null);
           if (tax > 0) log(`TAX: Paid ${formatCurrencyLog(tax)} for frequent trading.`, 'overdraft');
           setBuyQuantities(prev => ({...prev, [c.name]: ''}));
-          SFX.play('coin');
+          SFX.play('swipe');
       } else {
           let rev = qty * mItem.price - tax;
           const weight = qty * c.unitWeight;
@@ -863,7 +906,7 @@ export default function App() {
           if (rev > 1000000) {
             SFX.play('high_value_trade');
           } else {
-            SFX.play('coin');
+            SFX.play('kaching');
           }
       }
       setModal({type:'none', data:null});
@@ -1503,6 +1546,7 @@ export default function App() {
                      s.cash += c.reward;
                      s.stats.largestSingleWin = Math.max(s.stats.largestSingleWin, c.reward);
                      report.events.push(`CONTRACT FULFILLED: ${c.firm} received shipment at ${VENUES[c.destinationIndex]}. Reward: ${formatCurrencyLog(c.reward)}`);
+                     speakRetro("Contract Fulfilled Master");
                      c.status = 'completed';
                      c.dayCompleted = s.day;
                      if (item.quantity <= 0) consumed = true;
@@ -1700,7 +1744,7 @@ export default function App() {
               stats: { ...prev.stats, largestSingleWin: Math.max(prev.stats.largestSingleWin, c.reward) }
           }) : null);
           log(`CONTRACT: Manual fulfillment of ${c.firm} contract. Reward: ${formatCurrencyLog(c.reward)}`, 'profit');
-          SFX.play('success');
+           speakRetro("Contract Fulfilled Master");
       }
   };
 
@@ -1950,31 +1994,6 @@ export default function App() {
                      </div>
                  </div>
                  <button onClick={() => { setModal({type:'none', data:null}); SFX.play('click'); window.speechSynthesis.cancel(); }} className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-5 rounded-2xl text-2xl shadow-xl action-btn uppercase">Proceed to Operations</button>
-            </div>
-        );
-      }
-
-      if (modal.type === 'wiki') {
-        const tabs = { General: User, Commodities: FlaskConical, Venues: Map, Corporations: Briefcase, 'Loan Firms': Landmark, Upgrades: Cog, Encounters: AlertTriangle };
-        return (
-            <div className="flex flex-col h-full bg-slate-900/40 p-4 md:p-8 animate-in fade-in duration-300">
-                <div className="flex justify-between items-center mb-8 border-b border-gray-700 pb-4">
-                    <h2 className="text-3xl font-scifi text-orange-400 uppercase tracking-widest">Sector Codex</h2>
-                </div>
-                <div className="flex bg-slate-800/50 p-1 rounded-xl mb-4">
-                    {Object.entries(tabs).map(([tab, Icon]) => (
-                        <button key={tab} onClick={() => setWikiTab(tab)} className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-bold text-xs uppercase transition-all ${wikiTab === tab ? 'bg-orange-600 text-white shadow-md' : 'text-gray-400 hover:bg-slate-700'}`}><Icon size={14}/>{tab}</button>
-                    ))}
-                </div>
-                <div className="flex-grow overflow-y-auto custom-scrollbar pr-4 space-y-4">
-                    {wikiTab === 'General' && <div className="p-4 bg-black/30 rounded-xl border border-gray-800">Welcome to the StarBucks Sector, Captain. This codex is your guide to navigating the complex world of interstellar trade.</div>}
-                    {wikiTab === 'Commodities' && COMMODITIES.map(c => <div key={c.name} className="bg-black/30 p-4 rounded-xl border border-gray-800"><b>{c.name}</b>: {c.description || "No description available."}</div>)}
-                    {wikiTab === 'Venues' && VENUES.map(v => <div key={v} className="bg-black/30 p-4 rounded-xl border border-gray-800">{v}</div>)}
-                    {wikiTab === 'Corporations' && CONTRACT_FIRMS.map(c => <div key={c} className="bg-black/30 p-4 rounded-xl border border-gray-800">{c}</div>)}
-                    {wikiTab === 'Loan Firms' && LOAN_FIRMS.map(l => <div key={l.name} className="bg-black/30 p-4 rounded-xl border border-gray-800">{l.name}</div>)}
-                    {wikiTab === 'Upgrades' && SHOP_ITEMS.map(i => <div key={i.id} className="bg-black/30 p-4 rounded-xl border border-gray-800"><b>{i.name}</b>: {i.description}</div>)}
-                    {wikiTab === 'Encounters' && <div className="p-4 bg-black/30 rounded-xl border border-gray-800">This section will detail the various encounters you may face in the void.</div>}
-                </div>
             </div>
         );
       }
@@ -2781,7 +2800,7 @@ export default function App() {
                                <div>
                                    <h3 className="text-white font-bold mb-4 uppercase tracking-widest text-sm border-l-2 border-blue-500 pl-4">Local Assets</h3>
                                    <div className="space-y-3">
-                                       {Object.entries(state.cargo).filter(([name]) => !stagedContract || stagedContract.commodity !== name).map(([name, item]: [string, CargoItem]) => {
+                                       {Object.entries(state.cargo).filter(([name, item]) => !(stagedContract && stagedContract.commodity === name)).map(([name, item]: [string, CargoItem]) => {
                                            const isSelected = highlightShippingItem === name && !shippingSource[name]?.type;
                                            const qtyValStr = shippingQuantities[name] || '';
                                            const destValStr = shippingDestinations[name] || '';
@@ -3043,6 +3062,39 @@ export default function App() {
                    </div>
               </div>
           );
+      }
+
+      if (modal.type === 'wiki') {
+        const sections = [
+            { title: "The Rusty Redeemer", icon: Anchor, content: "The RR Firefox 22 'RustyRedeemer' is a decommissioned cargo frigate of the 60/40 class. It consists of 60% oxidation and 40% hope. Originally designed for short-range hauling, its isotope hummers have been modified to handle the stress of phase-shifting market dynamics." },
+            { title: "S.H.A.N.E. Protocols", icon: Shield, content: "Sector Health, Allocation, & Network Enforcement (S.H.A.N.E.) governs all trade lanes. They enforce the Galactic Overlord Decree (G.O.D.), which dictates that any trader failing to meet net-worth thresholds within specific time cycles will have their license revoked and their vessel reclaimed by the state." },
+            { title: "Extraction Logic", icon: Zap, content: "Mining lasers (Upgrades Deck) allow for the harvesting of resources from asteroid belts during transit. Higher-tier lasers and 'Overload' toggles increase yield but drastically spike the risk of structural realignment failures or laser burnout. Yield is directly proportional to laser focal integrity." },
+            { title: "F.O.M.O. Engineering", icon: Factory, content: "Fabricate Output Management Operations allows captains to synthesize raw materials into high-value commodities. Z@onflex Weave Mesh is critical for cargo bay expansions, while Stim-Packs are in high demand by biological colonies throughout the sector." },
+            { title: "Void-Ex Logistics", icon: Truck, content: "Shipping goods across the void via Private or Corporate contracts is the most reliable way to secure multi-million credit payouts. Beware of auto-seizure policies: goods left in third-party warehouses for more than 3 cycles are sold to defray storage costs." }
+        ];
+
+        return (
+            <div className="flex flex-col h-full bg-slate-900/40 p-4 md:p-8 animate-in fade-in duration-300">
+                <div className="flex justify-between items-center mb-8 border-b border-gray-700 pb-4">
+                    <h2 className="text-3xl font-scifi text-orange-400 uppercase tracking-widest">Sector Codex v5.9</h2>
+                    <div className="text-[10px] text-gray-500 font-mono text-right uppercase leading-tight">Neural Reference System <br/>Database: UNRESTRICTED</div>
+                </div>
+                <div className="flex-grow overflow-y-auto custom-scrollbar pr-4 space-y-6">
+                    {sections.map((sec, i) => {
+                        const SecIcon = sec.icon;
+                        return (
+                            <div key={i} className="bg-black/30 p-6 rounded-2xl border border-gray-800 group hover:border-orange-500/30 transition-all">
+                                <div className="flex items-center gap-4 mb-4">
+                                    <div className="p-3 bg-orange-900/20 rounded-xl text-orange-400"><SecIcon size={24}/></div>
+                                    <h3 className="text-xl font-black text-white uppercase tracking-tighter">{sec.title}</h3>
+                                </div>
+                                <p className="text-gray-400 font-mono text-sm leading-relaxed">{sec.content}</p>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+        );
       }
 
       if (modal.type === 'highscores') {
