@@ -2781,7 +2781,7 @@ export default function App() {
                                <div>
                                    <h3 className="text-white font-bold mb-4 uppercase tracking-widest text-sm border-l-2 border-blue-500 pl-4">Local Assets</h3>
                                    <div className="space-y-3">
-                                       {Object.entries(state.cargo).map(([name, item]: [string, CargoItem]) => {
+                                       {Object.entries(state.cargo).filter(([name]) => !stagedContract || stagedContract.commodity !== name).map(([name, item]: [string, CargoItem]) => {
                                            const isSelected = highlightShippingItem === name && !shippingSource[name]?.type;
                                            const qtyValStr = shippingQuantities[name] || '';
                                            const destValStr = shippingDestinations[name] || '';
