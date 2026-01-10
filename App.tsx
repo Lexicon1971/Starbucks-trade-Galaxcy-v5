@@ -906,11 +906,9 @@ export default function App() {
           if (tax > 0) log(`TAX: Paid ${formatCurrencyLog(tax)} for frequent trading.`, 'overdraft');
           log(isProfitable ? `PROFIT: Made ${formatCurrencyLog(profit)} selling ${c.name}` : `LOSS: Lost ${formatCurrencyLog(Math.abs(profit))} selling ${c.name}`, isProfitable ? 'profit' : 'danger');
           setSellQuantities(prev => ({...prev, [c.name]: ''}));
-          if (rev > 1000000) {
-            SFX.play('high_value_trade');
-          } else {
-            SFX.play('kaching');
-          }
+          SFX.play('kaching');
+          setTimeout(() => SFX.play('kaching'), 150);
+          setTimeout(() => SFX.play('kaching'), 300);
       }
       setModal({type:'none', data:null});
   };
