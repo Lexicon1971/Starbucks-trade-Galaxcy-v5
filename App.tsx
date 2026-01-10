@@ -1,7 +1,7 @@
 /**
  * ============================================================================
  * PROJECT: STAR BUCKS TRADE EMPIRE 5
- * VERSION: v5.9.4 (Senior Analyst Elite Mining Patch)
+ * VERSION: v10.2.1 Jules
  * ============================================================================
  * 
  * FEATURE MANIFEST / INTEGRITY CHECKLIST:
@@ -24,6 +24,9 @@
  *             FIXED 'boolean is not defined' error in state initialization.
  * [✓] v5.9.4: REFINED HUD layout (shifted items closer). BALANCED Mining sweet-spot.
  *             FORCED Overload toggle off if laser disabled.
+ * [✓] v10.0.0: REPLACED all string-based currency with <PriceDisplay /> component.
+ * [✓] v10.1.0: ADDED Intel button to Shipping UI.
+ * [✓] v10.2.0: ADDED Market Scanner button to Banking UI.
  * 
  * ============================================================================
  */
@@ -84,7 +87,7 @@ class SoundEngine {
     }
 
     toggleMute() {
-        this.init();
+          this.init();
         this.isMuted = !this.isMuted;
         if (this.masterGain) {
             this.masterGain.gain.setTargetAtTime(this.isMuted ? 0 : 0.6, this.ctx!.currentTime, 0.1);
@@ -137,10 +140,10 @@ class SoundEngine {
         noise.start(t);
     }
 
-    play(type: 'click' | 'coin' | 'warp' | 'error' | 'success' | 'alarm' | 'contract_success' | 'phase_change' | 'high_value_trade' | 'kaching' | 'swipe') {
+        play(type: 'click' | 'coin' | 'warp' | 'error' | 'success' | 'alarm' | 'contract_success' | 'phase_change' | 'high_value_trade' | 'kaching' | 'swipe') {
         this.init();
         if (this.isMuted || !this.ctx || !this.masterGain) return;
-        const t = this.ctx.currentTime;
+            const t = this.ctx.currentTime;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.connect(gain);
@@ -273,7 +276,7 @@ class SoundEngine {
                     osc3.stop(t + 0.5);
                 }
                 break;
-            case 'kaching':
+                case 'kaching':
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(1046.50, t); // C6
                 gain.gain.setValueAtTime(0.1, t);
@@ -571,7 +574,7 @@ export default function App() {
         loanTakenToday: false,
         venueTradeBans: {},
         messages: [
-          { id: 1, message: `System Init v5.9.4 (Senior Analyst Patch)... Welcome aboard, Captain.`, type: 'info' },
+          { id: 1, message: `System Init v10.2.1 Jules ... Welcome aboard, Captain.`, type: 'info' },
           { id: 2, message: `Widow's Gift Sent: ${formatCurrencyLog(30000)}. Loan secured from ${initialLoan.firmName}.`, type: 'debt' },
           { id: 3, message: `System Status: S.H.A.N.E. Online.`, type: 'info' }
         ],
@@ -1546,7 +1549,7 @@ export default function App() {
                      s.cash += c.reward;
                      s.stats.largestSingleWin = Math.max(s.stats.largestSingleWin, c.reward);
                      report.events.push(`CONTRACT FULFILLED: ${c.firm} received shipment at ${VENUES[c.destinationIndex]}. Reward: ${formatCurrencyLog(c.reward)}`);
-                     speakRetro("Contract Fulfilled Master");
+                      speakRetro("Contract Fulfilled Master");
                      c.status = 'completed';
                      c.dayCompleted = s.day;
                      if (item.quantity <= 0) consumed = true;
@@ -1938,7 +1941,7 @@ export default function App() {
 
   // --- BLOCK 5: UI RENDER ----------------------------------------------------
 
-  if (!state) return <div className="text-center text-white p-10 font-scifi">Loading <span className="bg-yellow-400 text-black px-1">v5.9.4</span>...</div>;
+  if (!state) return <div className="text-center text-white p-10 font-scifi">Loading <span className="bg-yellow-400 text-black px-1">v10.2.1</span>...</div>;
 
   const currentMarketLocal = state.markets[state.currentVenueIndex];
   const phaseMultiplier = 1 + ((state.gamePhase - 1) * 0.25);
@@ -1997,6 +2000,7 @@ export default function App() {
             </div>
         );
       }
+
 
       if (modal.type === 'venue_intel') {
         return (
@@ -2128,7 +2132,7 @@ export default function App() {
         return (
             <div className="flex flex-col h-full bg-slate-900/40 p-4 md:p-8 animate-in fade-in duration-300">
                 <div className="flex justify-between items-center mb-8 border-b border-gray-700 pb-4">
-                    <h2 className="text-3xl font-scifi text-orange-400 uppercase tracking-widest">Sector Codex v5.9</h2>
+                    <h2 className="text-3xl font-scifi text-orange-400 uppercase tracking-widest">Sector Codex v10.2.1</h2>
                     <div className="text-[10px] text-gray-500 font-mono text-right uppercase leading-tight">Neural Reference System <br/>Database: UNRESTRICTED</div>
                 </div>
                 <div className="flex-grow overflow-y-auto custom-scrollbar pr-4 space-y-6">
@@ -2568,7 +2572,7 @@ export default function App() {
 
                    <div className="flex-grow flex flex-col overflow-y-auto custom-scrollbar relative pt-10">
                         <div className="absolute top-0 right-0 w-72 text-[10px] text-orange-600 font-mono text-right italic leading-tight uppercase opacity-70">
-                            SYSTEM LOG: FABRICATION MATRIX v5.9 ACTIVE
+                            SYSTEM LOG: FABRICATION MATRIX v10.2.1 ACTIVE
                         </div>
 
                         <div className="text-center space-y-2 mb-10">
@@ -2800,7 +2804,7 @@ export default function App() {
                                <div>
                                    <h3 className="text-white font-bold mb-4 uppercase tracking-widest text-sm border-l-2 border-blue-500 pl-4">Local Assets</h3>
                                    <div className="space-y-3">
-                                       {Object.entries(state.cargo).filter(([name, item]) => !(stagedContract && stagedContract.commodity === name)).map(([name, item]: [string, CargoItem]) => {
+                                         {Object.entries(state.cargo).filter(([name, item]) => !(stagedContract && stagedContract.commodity === name)).map(([name, item]: [string, CargoItem]) => {
                                            const isSelected = highlightShippingItem === name && !shippingSource[name]?.type;
                                            const qtyValStr = shippingQuantities[name] || '';
                                            const destValStr = shippingDestinations[name] || '';
@@ -2808,7 +2812,13 @@ export default function App() {
 
                                            return (
                                                <div key={name} className={`p-5 rounded-2xl border transition-all ${isSelected ? 'border-blue-500 bg-blue-900/20 shadow-2xl' : 'border-slate-700 bg-slate-800/40 hover:border-slate-600'}`}>
-                                                   <div className="flex justify-between items-center mb-4"><span className="text-white font-black text-lg">{name}</span><span className="text-[10px] text-gray-500 font-mono uppercase">Avail: {item.quantity}</span></div>
+                                                  <div className="flex justify-between items-center mb-4">
+                                                      <div className="flex items-center gap-2">
+                                                        <span className="text-white font-black text-lg">{name}</span>
+                                                        <button onClick={() => showCommodityIntel(name)} className="text-[10px] bg-cyan-900 hover:bg-cyan-800 border border-cyan-500 text-cyan-300 px-2 py-1 rounded font-black shrink-0">INTEL</button>
+                                                      </div>
+                                                      <span className="text-[10px] text-gray-500 font-mono uppercase">Avail: {item.quantity}</span>
+                                                   </div>
                                                    <div className="grid grid-cols-3 gap-3 mb-4">
                                                        <input type="number" placeholder="Qty" className="bg-gray-900 text-white p-3 rounded-xl border border-gray-700 text-lg font-bold outline-none col-span-1" value={qtyValStr || ''} onChange={e=>setShippingQuantities({...shippingQuantities, [name]:e.target.value})} />
                                                        <button onClick={()=>setShippingQuantities({...shippingQuantities, [name]: item.quantity.toString()})} className="bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-xl transition-colors">ALL</button>
@@ -2917,7 +2927,10 @@ export default function App() {
                                            return (
                                                <div className="p-5 rounded-2xl border-2 border-purple-500 bg-purple-900/60 shadow-xl animate-pulse">
                                                    <div className="flex justify-between items-center mb-2">
+                                                   <div className="flex items-center gap-2">
                                                        <span className="text-white font-black text-lg uppercase">Remote Hub Op</span>
+                                                           <button onClick={() => showCommodityIntel(name)} className="text-[10px] bg-cyan-900 hover:bg-cyan-800 border border-cyan-500 text-cyan-300 px-2 py-1 rounded font-black shrink-0">INTEL</button>
+                                                      </div>
                                                        <button onClick={() => {
                                                            setShippingSource({});
                                                            setHighlightShippingItem(null);
@@ -3059,7 +3072,7 @@ export default function App() {
                                </div>
                            </div>
                        )}
-                   </div>
+                    </div>
               </div>
           );
       }
@@ -3076,7 +3089,7 @@ export default function App() {
         return (
             <div className="flex flex-col h-full bg-slate-900/40 p-4 md:p-8 animate-in fade-in duration-300">
                 <div className="flex justify-between items-center mb-8 border-b border-gray-700 pb-4">
-                    <h2 className="text-3xl font-scifi text-orange-400 uppercase tracking-widest">Sector Codex v5.9</h2>
+                    <h2 className="text-3xl font-scifi text-orange-400 uppercase tracking-widest">Sector Codex v10.2.1</h2>
                     <div className="text-[10px] text-gray-500 font-mono text-right uppercase leading-tight">Neural Reference System <br/>Database: UNRESTRICTED</div>
                 </div>
                 <div className="flex-grow overflow-y-auto custom-scrollbar pr-4 space-y-6">
@@ -3091,10 +3104,10 @@ export default function App() {
                                 <p className="text-gray-400 font-mono text-sm leading-relaxed">{sec.content}</p>
                             </div>
                         );
-                    })}
-                </div>
-            </div>
-        );
+                    })}       
+                   </div>
+              </div>
+          );
       }
 
       if (modal.type === 'highscores') {
@@ -3139,7 +3152,7 @@ export default function App() {
               <div className="flex flex-col items-start md:w-1/4">
                  <div className="flex items-baseline space-x-2 whitespace-nowrap overflow-visible">
                     <h1 className="font-scifi text-2xl md:text-3xl font-bold text-white tracking-widest shrink-0 uppercase">$tar Bucks</h1>
-                    <span className="text-xs text-yellow-500 font-mono bg-yellow-400/10 px-1 border border-yellow-500/20 font-bold shrink-0">v5.9.4</span>
+                    <span className="text-xs text-yellow-500 font-mono bg-yellow-400/10 px-1 border border-yellow-500/20 font-bold shrink-0">v10.2.1</span>
                     
                     <div className="flex items-center space-x-2 ml-4 border-l border-gray-700 pl-4 shrink-0 relative z-50">
                         {/* Audio Toggle */}
@@ -3314,7 +3327,7 @@ export default function App() {
                   <div className="flex justify-center gap-8 px-4 w-full max-w-4xl">
                     <button onClick={()=>{setModal({type:'none', data:null}); startNewGame();}} className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-6 px-4 md:px-16 rounded-xl text-2xl md:text-4xl shadow-[0_0_40px_rgba(16,185,129,0.5)] action-btn border-4 border-emerald-400 uppercase tracking-widest">Board Ship</button>
                   </div>
-                  <p className="text-gray-500 font-mono text-[10px] mt-6 uppercase tracking-[0.4em]">Neural Link Interface v5.9.4</p>
+                  <p className="text-gray-500 font-mono text-[10px] mt-6 uppercase tracking-[0.4em]">Neural Link Interface v10.2.1</p>
                </div>
            </div>
        )}
