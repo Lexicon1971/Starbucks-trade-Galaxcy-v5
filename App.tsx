@@ -3311,7 +3311,7 @@ export default function App() {
        )}
 
        {modal.type === 'welcome' && (
-           <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center z-50 overflow-hidden backdrop-blur-sm">
+           <div className="absolute inset-0 flex flex-col items-center justify-center z-50 overflow-hidden">
                <div className="crawl-container h-[70%]">
                   <div className="crawl-content space-y-12">
                      <h1 className="text-7xl md:text-9xl font-scifi text-white font-black text-center tracking-[0.2em] mb-20 uppercase whitespace-nowrap">$TAR BUCKS</h1>
