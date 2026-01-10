@@ -140,7 +140,7 @@ class SoundEngine {
         noise.start(t);
     }
 
-        play(type: 'click' | 'coin' | 'warp' | 'error' | 'success' | 'alarm' | 'contract_success' | 'phase_change' | 'high_value_trade' | 'kaching' | 'swipe') {
+        play(type: 'click' | 'coin' | 'warp' | 'error' | 'success' | 'alarm' | 'contract_success' | 'phase_change' | 'high_value_trade' | 'kaching' | 'swipe' | 'raspberry') {
         this.init();
         if (this.isMuted || !this.ctx || !this.masterGain) return;
             const t = this.ctx.currentTime;
@@ -316,6 +316,15 @@ class SoundEngine {
                 envelope.connect(this.masterGain);
                 noise.start(t);
                 noise.stop(t + 0.2);
+                break;
+            case 'raspberry':
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(120, t);
+                osc.frequency.linearRampToValueAtTime(100, t + 0.3);
+                gain.gain.setValueAtTime(0.1, t);
+                gain.gain.linearRampToValueAtTime(0, t + 0.3);
+                osc.start(t);
+                osc.stop(t + 0.3);
                 break;
         }
     }
@@ -906,9 +915,13 @@ export default function App() {
           if (tax > 0) log(`TAX: Paid ${formatCurrencyLog(tax)} for frequent trading.`, 'overdraft');
           log(isProfitable ? `PROFIT: Made ${formatCurrencyLog(profit)} selling ${c.name}` : `LOSS: Lost ${formatCurrencyLog(Math.abs(profit))} selling ${c.name}`, isProfitable ? 'profit' : 'danger');
           setSellQuantities(prev => ({...prev, [c.name]: ''}));
-          SFX.play('kaching');
-          setTimeout(() => SFX.play('kaching'), 150);
-          setTimeout(() => SFX.play('kaching'), 300);
+          if (isProfitable) {
+            SFX.play('kaching');
+            setTimeout(() => SFX.play('kaching'), 150);
+            setTimeout(() => SFX.play('kaching'), 300);
+          } else {
+            SFX.play('raspberry');
+          }
       }
       setModal({type:'none', data:null});
   };
