@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>STAR BUCKS - Jules (v10.2.1)</title>
+    <title>STAR BUCKS - Jules (v10.2.2)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
@@ -19,7 +19,7 @@
       }
       body {
           font-family: 'Inter', sans-serif;
-          background-color: #010204;
+          background-color: transparent;
           color: #d1fae5;
           margin: 0;
           padding: 0;
@@ -184,64 +184,35 @@
 }
 </script>
   <link rel="stylesheet" href="/index.css">
+  <link rel="stylesheet" href="starfield.css">
 </head>
   <body>
-    <canvas id="starfield"></canvas>
+    <div id="starfield"></div>
     <div id="root"></div>
-    <script>
-      const canvas = document.getElementById('starfield');
-      const ctx = canvas.getContext('2d');
-      
-      let width, height, stars = [];
-
-      function initStars() {
-          width = window.innerWidth;
-          height = window.innerHeight;
-          canvas.width = width;
-          canvas.height = height;
-          stars = [];
-          const numStars = Math.floor((width * height) / 1200); 
-          
-          for(let i=0; i<numStars; i++) {
-              stars.push({
-                  x: Math.random() * width,
-                  y: Math.random() * height,
-                  size: Math.random() < 0.9 ? Math.random() * 1.2 : Math.random() * 2.5,
-                  alpha: Math.random() * 0.5 + 0.1, 
-                  twinkleSpeed: 0.02 + Math.random() * 0.03
-              });
-          }
-      }
-
-      function animateStars() {
-          ctx.clearRect(0, 0, width, height);
-          ctx.fillStyle = "#010204"; 
-          ctx.fillRect(0,0,width,height); 
-          
-          stars.forEach(star => {
-              star.alpha += star.twinkleSpeed;
-              if (star.alpha > 1 || star.alpha < 0.1) {
-                  star.twinkleSpeed *= -1;
-              }
-
-              star.x -= 0.1 * star.size;
-              if (star.x < 0) {
-                  star.x = width;
-              }
-
-              ctx.globalAlpha = star.alpha;
-              ctx.fillStyle = 'white';
-              ctx.beginPath();
-              ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
-              ctx.fill();
-          });
-          requestAnimationFrame(animateStars);
-      }
-
-      window.addEventListener('resize', initStars);
-      initStars();
-      animateStars();
-    </script>
     <script type="module" src="index.js"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        const starfield = document.getElementById('starfield');
+        if (!starfield) {
+            return;
+        }
+        const numStars = Math.floor((window.innerWidth * window.innerHeight) / 1200);
+
+        for (let i = 0; i < numStars; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            const size = Math.random() < 0.9 ? Math.random() * 1.2 : Math.random() * 2.5;
+            star.style.width = `${size}px`;
+            star.style.height = `${size}px`;
+            star.style.top = `${Math.random() * 100}%`;
+            star.style.left = `${Math.random() * 100}%`;
+            const duration = 2 + Math.random() * 3;
+            const delay = Math.random() * 5;
+            star.style.animationDuration = `${duration}s`;
+            star.style.animationDelay = `${delay}s`;
+            starfield.appendChild(star);
+        }
+      });
+    </script>
 </body>
 </html>
